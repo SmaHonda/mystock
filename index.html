@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股持股管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 台股持股管理</h1>
+            <div class="header-actions">
+                <button id="btn-export" class="btn btn-secondary">匯出備份</button>
+                <label class="btn btn-secondary">
+                    匯入備份
+                    <input type="file" id="file-import" accept=".json" hidden>
+                </label>
+            </div>
+        </header>
+
+        <!-- 總覽區 -->
+        <section id="overview" class="card">
+            <h2>投資總覽</h2>
+            <div class="overview-grid">
+                <div class="stat">
+                    <span class="stat-label">總投入成本</span>
+                    <span id="total-cost" class="stat-value">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">目前市值</span>
+                    <span id="total-value" class="stat-value">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">累計股利</span>
+                    <span id="total-dividend" class="stat-value">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">損益（不含降成本）</span>
+                    <span id="profit-raw" class="stat-value">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">損益（含降成本）</span>
+                    <span id="profit-adjusted" class="stat-value">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">報酬率（含降成本）</span>
+                    <span id="return-rate" class="stat-value">0%</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 新增持股 -->
+        <section class="card">
+            <h2>新增持股</h2>
+            <form id="form-stock">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>股票代號</label>
+                        <input type="text" id="input-symbol" placeholder="2330" required>
+                    </div>
+                    <div class="form-group">
+                        <label>股票名稱</label>
+                        <input type="text" id="input-name" placeholder="台積電" required>
+                    </div>
+                    <div class="form-group">
+                        <label>券商</label>
+                        <input type="text" id="input-broker" placeholder="元大" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>買入價格</label>
+                        <input type="number" id="input-price" step="0.01" placeholder="580" required>
+                    </div>
+                    <div class="form-group">
+                        <label>股數</label>
+                        <input type="number" id="input-shares" placeholder="1000" required>
+                    </div>
+                    <div class="form-group">
+                        <label>買入日期</label>
+                        <input type="date" id="input-date" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">新增持股</button>
+            </form>
+        </section>
+
+        <!-- 持股列表 -->
+        <section class="card">
+            <h2>持股明細</h2>
+            <div class="filter-row">
+                <label>篩選券商：</label>
+                <select id="filter-broker">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="table-wrapper">
+                <table id="table-stocks">
+                    <thead>
+                        <tr>
+                            <th>代號</th>
+                            <th>名稱</th>
+                            <th>券商</th>
+                            <th>股數</th>
+                            <th>均價</th>
+                            <th>現價</th>
+                            <th>市值</th>
+                            <th>損益（原始）</th>
+                            <th>損益（降成本）</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 個股詳情 Modal -->
+        <div id="modal-detail" class="modal hidden">
+            <div class="modal-content">
+                <button class="modal-close">&times;</button>
+                <h2 id="detail-title">個股詳情</h2>
+                
+                <div class="detail-section">
+                    <h3>持股資訊</h3>
+                    <div id="detail-info"></div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>買入紀錄</h3>
+                    <table id="table-purchases">
+                        <thead>
+                            <tr><th>日期</th><th>價格</th><th>股數</th><th>小計</th><th>操作</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div class="detail-section">
+                    <h3>配股配息紀錄</h3>
+                    <form id="form-dividend" class="form-inline">
+                        <input type="date" id="div-date" required>
+                        <input type="number" id="div-cash" step="0.01" placeholder="現金股利">
+                        <input type="number" id="div-stock" placeholder="股票股利(股)">
+                        <button type="submit" class="btn btn-primary">新增</button>
+                    </form>
+                    <table id="table-dividends">
+                        <thead>
+                            <tr><th>日期</th><th>現金股利</th><th>股票股利</th><th>操作</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="dividend-summary">
+                        <p>累計現金股利：<span id="sum-cash">$0</span></p>
+                        <p>累計股票股利：<span id="sum-stock">0 股</span></p>
+                        <p>降低成本效果：<span id="cost-reduction">$0/股</span></p>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>更新現價</h3>
+                    <form id="form-price" class="form-inline">
+                        <input type="number" id="current-price" step="0.01" placeholder="輸入現價" required>
+                        <button type="submit" class="btn btn-primary">更新</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
